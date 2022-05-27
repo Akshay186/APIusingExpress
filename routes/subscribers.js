@@ -12,13 +12,15 @@ router.get('/',  async (req,res)=>{
         res.status(500).json({message : error.message})
     }
 })
+
 //geting one
-router.get('/:id', (req,res)=>{
-    res.send(req.params.id)
+router.get('/:id',getSubscriber, (req,res)=>{
+    res.json(res.subscriber)
 })
+
 //creating one
 router.post('/', async (req,res)=>{
-    
+
     console.log(req.body)
     const subscriber = new Subscriber({
         name: req.body.name,
@@ -33,12 +35,45 @@ router.post('/', async (req,res)=>{
     }
 })
 //updating one
-router.patch('/:id', (req,res)=>{
+router.patch('/:id',getSubscriber, async (req,res)=>{
+    if(req.body.name!=null){
+        res.subscriber.name=req.body.name
+    }
+    if(req.body.name!=null){
+        res.subscriber.subscribedTo=req.body.subscribedTo
+    }
     
+    try{
+        const updatedSubscriber = await res.subscriber.save()
+        res.json(updatedSubscriber)
+    }catch(error){
+        res.status(400).json({message: error.message})
+    }
 })
 //deleting one
-router.delete('/:id', (req,res)=>{
-    
+router.delete('/:id',getSubscriber, async(req,res)=>{
+    try{
+        await res.subscriber.remove()
+        res.json({message: 'Deleted Subscriber'})
+    }catch(error){
+        res.status(500).json({message: error.message})
+    }
 })
+
+async function getSubscriber(req, res, next){
+    let subscriber
+    let id = req.params.id
+    try{
+        subscriber = await Subscriber.findById(id)
+        if(subscriber==null){
+            return res.status(404).json({message: 'User does not exist'})
+        }
+    }catch(error){
+        res.status(500).json({message: error.message})
+    }
+    
+    res.subscriber = subscriber
+    next()
+}
 
 module.exports=router
